@@ -21,7 +21,7 @@ func main() {
 	ctx := context.Background()
 	token := os.Getenv("RM_GITHUB_TOKEN")
 	if token == "" {
-		fmt.Println("Set the GITHUB_TOKEN environment variable.")
+		fmt.Println("Set the RM_GITHUB_TOKEN environment variable.")
 		return
 	}
 
@@ -34,7 +34,7 @@ func main() {
 	repoOwner := os.Getenv("RM_GITHUB_REPOSITORY_OWNER")
 	repoName := os.Getenv("RM_GITHUB_REPOSITORY_NAME")
 	if repoOwner == "" || repoName == "" {
-		fmt.Println("Set the GITHUB_REPOSITORY_OWNER and GITHUB_REPOSITORY_NAME environment variables.")
+		fmt.Println("Set the RM_GITHUB_REPOSITORY_OWNER and RM_GITHUB_REPOSITORY_NAME environment variables.")
 		return
 	}
 
