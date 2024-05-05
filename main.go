@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/google/go-github/v39/github"
+	"github.com/google/go-github/github"
 	"github.com/joho/godotenv"
 	"golang.org/x/oauth2"
+	"gonum.org/v1/plot"
+	"gonum.org/v1/plot/plotter"
 )
 
 func main() {
@@ -45,19 +47,51 @@ func main() {
 		return
 	}
 
+	// Store the time to first review for each PR
+	times := make([]float64, 0)
+
 	for _, pr := range prs {
-		// Fetch reviews for each PR
+		// Fetch all reviews for the PR
 		reviews, _, err := client.PullRequests.ListReviews(ctx, repoOwner, repoName, *pr.Number, nil)
 		if err != nil {
-			fmt.Printf("Error fetching reviews for PR #%d: %v\n", *pr.Number, err)
-			continue
+			fmt.Printf("Error fetching reviews for PR %d: %v\n", *pr.Number, err)
+			return
 		}
+		fmt.Printf("PR %d has %d reviews\n", *pr.Number, len(reviews))
 
+		// Calculate the time to first review
 		if len(reviews) > 0 {
-			// Assuming the first review in the list is the earliest
-			firstReview := reviews[0]
-			duration := firstReview.SubmittedAt.Sub(*pr.CreatedAt)
-			fmt.Printf("PR #%d: Time to first review: %v\n", *pr.Number, duration)
+			timeToFirstReview := reviews[0].SubmittedAt.Sub(*pr.CreatedAt).Hours()
+			times = append(times, timeToFirstReview)
 		}
+	}
+
+	// Draw a graph of the average time to first review for each PR
+	drawAverageFirstReviewTimeGraph(&times)
+}
+
+func drawAverageFirstReviewTimeGraph(times *[]float64) {
+	p := plot.New()
+	p.Title.Text = "Average Time to First Review"
+	p.X.Label.Text = "Lines of Code Changed"
+	p.Y.Label.Text = "Time to First Review (hours)"
+
+	// Create a plotter.Values value and fill it with the times
+	v := make(plotter.Values, len(*times))
+	copy(v, *times)
+
+	// Create a histogram of our values drawn
+	h, err := plotter.NewHist(v, 16)
+	if err != nil {
+		panic(err)
+	}
+	h.Normalize(1)
+
+	// Add the histogram to the plot
+	p.Add(h)
+
+	// Save the plot to a PNG file
+	if err := p.Save(400, 400, "hist.png"); err != nil {
+		panic(err)
 	}
 }
